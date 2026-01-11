@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>订阅链接转换器 - Subscription Converter</title>
+  <meta name="description" content="免费的代理订阅链接转换工具，支持 Clash、V2Ray、Shadowrocket 等多种格式">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div class="container">
+    <!-- 头部 -->
+    <header class="header">
+      <h1 class="title">订阅转换</h1>
+      <p class="subtitle">将代理配置转换为各种客户端支持的格式</p>
+    </header>
+
+    <!-- 主卡片 -->
+    <main class="card">
+      <!-- 输入方式选择 -->
+      <div class="form-group">
+        <label class="label">输入方式</label>
+        <div class="format-selector">
+          <div class="format-option">
+            <input type="radio" id="input-url" name="input-method" value="url" checked>
+            <label for="input-url" class="format-label">URL地址</label>
+          </div>
+          <div class="format-option">
+            <input type="radio" id="input-text" name="input-method" value="text">
+            <label for="input-text" class="format-label">直接粘贴</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- URL输入 -->
+      <div class="form-group" id="url-input-group">
+        <label class="label" for="yaml-url">YAML 配置 URL</label>
+        <input 
+          type="url" 
+          id="yaml-url" 
+          class="input" 
+          placeholder="https://example.com/config.yaml"
+        >
+      </div>
+
+      <!-- 文本输入 -->
+      <div class="form-group" id="text-input-group" style="display: none;">
+        <label class="label" for="yaml-text">YAML 配置内容</label>
+        <textarea 
+          id="yaml-text" 
+          class="textarea" 
+          placeholder="粘贴您的 YAML 配置内容..."
+        ></textarea>
+      </div>
+
+      <!-- 格式选择 -->
+      <div class="form-group">
+        <label class="label">目标格式</label>
+        <div class="format-selector">
+          <div class="format-option">
+            <input type="radio" id="format-clash" name="format" value="clash" checked>
+            <label for="format-clash" class="format-label">Clash</label>
+          </div>
+          <div class="format-option">
+            <input type="radio" id="format-v2ray" name="format" value="v2ray">
+            <label for="format-v2ray" class="format-label">V2Ray</label>
+          </div>
+          <div class="format-option">
+            <input type="radio" id="format-shadowrocket" name="format" value="shadowrocket">
+            <label for="format-shadowrocket" class="format-label">Shadowrocket</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 转换按钮 -->
+      <button id="convert-btn" class="btn btn-primary btn-block">
+        🔄 开始转换
+      </button>
+
+      <!-- 加载状态 -->
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p style="margin-top: 12px; color: var(--color-text-secondary);">正在转换...</p>
+      </div>
+
+      <!-- 提示信息 -->
+      <div id="alert-container"></div>
+    </main>
+
+    <!-- 结果区域 -->
+    <div id="result-section" class="card result-section">
+      <div class="result-header">
+        <h2 class="result-title">转换结果</h2>
+        <div class="result-actions">
+          <button id="copy-btn" class="btn btn-secondary">📋 复制</button>
+          <button id="download-btn" class="btn btn-secondary">💾 下载</button>
+        </div>
+      </div>
+      <div id="result-content" class="result-content"></div>
+
+      <!-- 订阅URL -->
+      <div id="subscription-url-section" style="display: none;">
+        <div class="subscription-url">
+          <div class="subscription-url-label">订阅链接 (可直接在客户端中使用)</div>
+          <div id="subscription-url" class="subscription-url-text"></div>
+          <button id="copy-url-btn" class="btn btn-secondary btn-block" style="margin-top: 12px;">
+            📋 复制订阅链接
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 使用说明 -->
+    <div class="card">
+      <h3 style="margin-bottom: 16px; font-size: 1.25rem;">📖 使用说明</h3>
+      <div style="color: var(--color-text-secondary); line-height: 1.8;">
+        <p style="margin-bottom: 12px;"><strong>支持的格式：</strong></p>
+        <ul style="margin-left: 20px; margin-bottom: 16px;">
+          <li><strong>Clash</strong> - 适用于 Clash、Clash for Windows、ClashX 等</li>
+          <li><strong>V2Ray</strong> - 适用于 V2RayN、V2RayNG 等（Base64订阅格式）</li>
+          <li><strong>Shadowrocket</strong> - 适用于 iOS Shadowrocket</li>
+        </ul>
+        <p style="margin-bottom: 12px;"><strong>支持的协议：</strong></p>
+        <ul style="margin-left: 20px; margin-bottom: 16px;">
+          <li>Shadowsocks (ss://)</li>
+          <li>ShadowsocksR (ssr://)</li>
+          <li>VMess (vmess://)</li>
+          <li>Trojan (trojan://)</li>
+          <li>Vless (vless://)</li>
+        </ul>
+        <p style="margin-bottom: 12px;"><strong>使用方式：</strong></p>
+        <ul style="margin-left: 20px;">
+          <li><strong>在线转换：</strong>在上方输入配置URL或直接粘贴内容，选择目标格式，点击转换</li>
+          <li><strong>订阅模式：</strong>转换后会生成订阅链接，可在代理客户端中直接订阅该链接</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+      <p>🔒 所有转换处理均在您的浏览器本地完成，保护您的隐私安全</p>
+      <p style="margin-top: 8px;">Made with ❤️ by FreeConvertor</p>
+    </footer>
+  </div>
+
+  <!-- YAML 解析库 -->
+  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+  <!-- 应用脚本 -->
+  <script src="app.js"></script>
+</body>
+</html>
