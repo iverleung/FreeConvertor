@@ -227,10 +227,34 @@ deploy_app() {
     
     print_info "创建应用目录: $APP_DIR"
     sudo mkdir -p $APP_DIR
-    sudo chown -R $USER:$USER $APP_DIR
     
-    print_info "复制应用文件..."
-    cp -r . $APP_DIR/
+    # 先检查 rsync 是否可用
+    if command -v rsync &> /dev/null; then
+        print_info "使用 rsync 复制应用文件（排除不必要的文件）..."
+        sudo rsync -av --chown=$USER:$USER \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            --exclude='*.log' \
+            --exclude='.DS_Store' \
+            --exclude='npm-debug.log*' \
+            . $APP_DIR/
+    else
+        print_info "复制应用文件（排除 .git 目录）..."
+        # 确保目录权限
+        sudo chown -R $USER:$USER $APP_DIR
+        
+        # 使用 tar 排除不必要的文件
+        tar --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            --exclude='*.log' \
+            --exclude='.DS_Store' \
+            -cf - . | (cd $APP_DIR && tar -xf -)
+        
+        # 再次确保权限
+        sudo chown -R $USER:$USER $APP_DIR
+    fi
     
     cd $APP_DIR
     
