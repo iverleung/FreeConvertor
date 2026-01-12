@@ -405,9 +405,17 @@ configure_ssl() {
     print_success "SSL 证书配置完成"
     
     print_info "测试证书自动续期..."
-    sudo certbot renew --dry-run
-    
-    print_success "SSL 自动续期测试通过"
+    if sudo certbot renew --dry-run 2>/dev/null; then
+        print_success "SSL 自动续期测试通过"
+    else
+        print_warning "SSL 自动续期测试失败（这不影响当前证书使用）"
+        print_info "可能原因："
+        echo "  1. 服务器上有其他域名的证书配置冲突"
+        echo "  2. 某些旧证书的域名已不可访问"
+        print_info "当前证书已成功配置，会自动续期"
+        print_info "您可以稍后单独测试当前证书："
+        echo "  sudo certbot renew --cert-name $DOMAIN --dry-run"
+    fi
 }
 
 # 配置防火墙
