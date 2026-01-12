@@ -131,6 +131,24 @@ get_email() {
     print_success "邮箱设置为: $EMAIL"
 }
 
+# 询问是否使用 www 子域名
+ask_www_subdomain() {
+    print_info "是否需要同时支持 www 子域名？"
+    print_warning "提示：只有当 www.$DOMAIN 也解析到此服务器时，才选择 y"
+    read -p "支持 www.$DOMAIN？(y/n，默认 n): " -n 1 -r
+    echo
+    
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        INCLUDE_WWW=true
+        DOMAIN_LIST="$DOMAIN www.$DOMAIN"
+        print_success "将同时配置: $DOMAIN 和 www.$DOMAIN"
+    else
+        INCLUDE_WWW=false
+        DOMAIN_LIST="$DOMAIN"
+        print_success "仅配置: $DOMAIN"
+    fi
+}
+
 # 检测系统类型
 detect_os() {
     print_header "检测系统环境"
@@ -298,7 +316,7 @@ configure_nginx() {
     sudo tee $NGINX_CONFIG > /dev/null <<EOF
 server {
     listen 80;
-    server_name $DOMAIN www.$DOMAIN;
+    server_name $DOMAIN_LIST;
 
     # 日志
     access_log /var/log/nginx/freeconvertor-access.log;
@@ -354,7 +372,12 @@ configure_ssl() {
     print_header "配置 SSL 证书"
     
     print_info "使用 Let's Encrypt 获取免费 SSL 证书..."
-    print_warning "请确保域名 $DOMAIN 已正确解析到此服务器"
+    print_warning "请确保域名已正确解析到此服务器IP"
+    if [ "$INCLUDE_WWW" = true ]; then
+        print_warning "请确保 $DOMAIN 和 www.$DOMAIN 都已解析"
+    else
+        print_warning "请确保 $DOMAIN 已解析"
+    fi
     
     read -p "是否继续配置 SSL？(y/n): " -n 1 -r
     echo
@@ -362,12 +385,22 @@ configure_ssl() {
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         print_warning "跳过 SSL 配置"
         print_info "您可以稍后运行以下命令配置 SSL:"
-        echo "  sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN"
+        if [ "$INCLUDE_WWW" = true ]; then
+            echo "  sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN"
+        else
+            echo "  sudo certbot --nginx -d $DOMAIN"
+        fi
         return
     fi
     
     print_info "获取 SSL 证书..."
-    sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN --non-interactive --agree-tos --email $EMAIL
+    
+    # 构建 certbot 命令
+    if [ "$INCLUDE_WWW" = true ]; then
+        sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN --non-interactive --agree-tos --email $EMAIL
+    else
+        sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos --email $EMAIL
+    fi
     
     print_success "SSL 证书配置完成"
     
@@ -434,6 +467,7 @@ main() {
     # 获取配置
     get_domain "$1"
     get_email "$2"
+    ask_www_subdomain
     
     # 确认部署
     echo ""
