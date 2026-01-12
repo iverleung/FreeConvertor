@@ -52,7 +52,8 @@ check_root() {
 # 验证域名格式
 validate_domain() {
     local domain=$1
-    if [[ ! $domain =~ ^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}$ ]]; then
+    # 支持多级子域名的正则表达式
+    if [[ ! $domain =~ ^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$ ]]; then
         return 1
     fi
     return 0
@@ -61,7 +62,11 @@ validate_domain() {
 # 验证邮箱格式
 validate_email() {
     local email=$1
-    if [[ ! $email =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+    # 支持更多合法邮箱格式：
+    # - 支持 + 号（plus addressing）
+    # - 支持多个点
+    # - 支持多级子域名的邮件服务商
+    if [[ ! $email =~ ^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$ ]]; then
         return 1
     fi
     return 0
